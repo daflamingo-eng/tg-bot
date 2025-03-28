@@ -8,7 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Initialize Logger
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 TOKEN = "7714181082:AAE_yQaFDb4Wc17QXVFKUTVxCfb0J__2X60"
 
 # Function to Extract Mega Link
-def get_mega_link(ad_link):
+async def get_mega_link(ad_link):
     # Chrome Options Setup
     options = Options()
     options.add_argument("--headless")
@@ -27,18 +28,14 @@ def get_mega_link(ad_link):
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
-    # Specify Chrome Binary Location
-    chrome_bin = "/usr/bin/google-chrome-stable"  # Path on Render
-    options.binary_location = chrome_bin
-
     # Initialize WebDriver
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
     wait = WebDriverWait(driver, 20)
 
     try:
         logger.info("Opening the link...")
         driver.get(ad_link)
-        time.sleep(5)  # Wait for initial page load
+        time.sleep(5)
 
         # Wait for 'Get Link' button and click it
         button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Get Link')]")))
@@ -65,33 +62,32 @@ def get_mega_link(ad_link):
         return f"Error: {str(e)}"
 
 # Telegram Command to Start the Bot
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Send me an Adrinolinks link, and I'll get the direct Mega link for you!")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Send me an Adrinolinks link, and I'll get the direct Mega link for you!")
 
 # Handle Messages (Extract Links)
-def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     if "adrinolinks.in" in user_message:
-        update.message.reply_text("Processing your request... Please wait.")
-        direct_link = get_mega_link(user_message)
-        update.message.reply_text(f"Here is your direct Mega link:\n{direct_link}")
+        await update.message.reply_text("Processing your request... Please wait.")
+        direct_link = await get_mega_link(user_message)
+        await update.message.reply_text(f"Here is your direct Mega link:\n{direct_link}")
     else:
-        update.message.reply_text("Please send a valid Adrinolinks link.")
+        await update.message.reply_text("Please send a valid Adrinolinks link.")
 
 # Main Function to Run the Bot
-def main():
+async def main():
     # Initialize the Telegram Bot
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+    app = ApplicationBuilder().token(TOKEN).build()
 
     # Command Handlers
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Start Polling
-    updater.start_polling()
-    updater.idle()
+    await app.run_polling()
 
 # Run the Bot
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
