@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Telegram Bot Token (Use Environment Variable)
-TOKEN = os.environ.get("TOKEN")
+TOKEN = os.environ.get("7714181082:AAE_yQaFDb4Wc17QXVFKUTVxCfb0J__2X60")
 
 # Function to Extract Mega Link
 async def get_mega_link(ad_link):
