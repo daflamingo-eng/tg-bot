@@ -15,8 +15,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Telegram Bot Token (Replace with your own Bot Token)
-TOKEN = "7714181082:AAE_yQaFDb4Wc17QXVFKUTVxCfb0J__2X60"
+# Telegram Bot Token (Use Environment Variable)
+TOKEN = os.environ.get("TOKEN")
 
 # Function to Extract Mega Link
 async def get_mega_link(ad_link):
@@ -48,18 +48,18 @@ async def get_mega_link(ad_link):
         final_link = driver.current_url
 
         logger.info(f"Final link found: {final_link}")
-        driver.quit()
         return final_link
 
     except TimeoutException:
         logger.error("Timeout: Element not found or page took too long to load.")
-        driver.quit()
         return "Error: Page took too long to load or element not found."
 
     except Exception as e:
         logger.error(f"Exception: {e}")
-        driver.quit()
         return f"Error: {str(e)}"
+
+    finally:
+        driver.quit()
 
 # Telegram Command to Start the Bot
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
