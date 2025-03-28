@@ -1,10 +1,15 @@
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-# Telegram Bot Token from BotFather
+# Enable logging for debugging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Telegram Bot Token
 TOKEN = "7714181082:AAE_yQaFDb4Wc17QXVFKUTVxCfb0J__2X60"
 
 # Function to extract Mega link
@@ -13,21 +18,27 @@ def get_mega_link(ad_link):
     options.add_argument("--headless")  # Run without GUI
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-
-    driver = webdriver.Chrome(options=options)
-    driver.get(ad_link)
-    time.sleep(5)  # Wait for redirection
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--remote-debugging-port=9222")
 
     try:
+        driver = webdriver.Chrome(options=options)
+        driver.get(ad_link)
+        time.sleep(5)  # Wait for redirection
+
+        # Find and click the button
         button = driver.find_element(By.XPATH, "//a[contains(text(), 'Get Link')]")
         button.click()
         time.sleep(3)
-    except:
-        return "Error: 'Get Link' button not found."
 
-    final_link = driver.current_url
-    driver.quit()
-    return final_link
+        final_link = driver.current_url
+        driver.quit()
+        return final_link
+
+    except Exception as e:
+        logger.error(f"Error extracting link: {e}")
+        return "Error: Could not extract link."
 
 # Telegram command to start the bot
 def start(update: Update, context: CallbackContext):
@@ -54,5 +65,5 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     main()
